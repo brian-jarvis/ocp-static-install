@@ -1,0 +1,7 @@
+192.168.130.10 vlab4na01.lp.ocp-lab.net
+192.168.131.10 vlab4oslb01.lp.ocp-lab.net  api.lp.ocp-lab.net  api-int.lp.ocp-lab.net
+192.168.131.9 vlab4osbs01.lp.ocp-lab.net
+192.168.131.11 vlab4osm01.lp.ocp-lab.net  etcd-0.lp.ocp-lab.net
+192.168.131.21 vlab4oswk01.lp.ocp-lab.net
+192.168.131.22 vlab4oswk02.lp.ocp-lab.net
+192.168.131.23 vlab4oswk03.lp.ocp-lab.net

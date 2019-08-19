@@ -1,24 +1,11 @@
-# OpenShift Clients
+This repo holds details for creating a OCP 4.x cluster with static IP addresses.  It is meant to be used as an example.
+Note more details are needed.
 
-The OpenShift client `oc` simplifies working with Kubernetes and OpenShift
-clusters, offering a number of advantages over `kubectl` such as easy login,
-kube config file management, and access to developer tools. The `kubectl`
-binary is included alongside for when strict Kubernetes compliance is necessary.
+#### TODO:
+  + Copy isntall/config, auth and kubeconfig details back to local machine.
+  + Install oc to local machine for running futher commands
+  + Automate running the virsh-install commands to generate the servers automatically
+  + switch to 4.2.x and use disconnected install process
 
-To learn more about OpenShift, visit [docs.openshift.com](https://docs.openshift.com)
-and select the version of OpenShift you are using.
 
-## Installing the tools
 
-After extracting this archive, move the `oc` and `kubectl` binaries
-to a location on your PATH such as `/usr/local/bin`. Then run:
-
-    oc login [API_URL]
-
-to start a session against an OpenShift cluster. After login, run `oc` and
-`oc help` to learn more about how to get started with OpenShift.
-
-## License
-
-OpenShift is licensed under the Apache Public License 2.0. The source code for this
-program is [located on github](https://github.com/openshift/origin).

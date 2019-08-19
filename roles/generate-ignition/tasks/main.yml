@@ -1,0 +1,31 @@
+
+- name: "Create fake root for interface"
+  file:
+    path: "{{ fake_root }}/{{ item_path }}"
+    state: directory
+  loop:
+    - "etc/sysconfig/network-scripts"
+    - "etc/NetworkManager/conf.d"
+  loop_control:
+    loop_var: "item_path"
+
+- name: "Create Interface from Template"
+  template:
+    src: "ifcfg.j2"
+    dest: "{{ fake_root }}/etc/sysconfig/network-scripts/ifcfg-{{ net_interface_name }}"
+
+- name: "Create Hostname from Template"
+  template:
+    src: "hostname.j2"
+    dest: "{{ fake_root }}/etc/hostname"
+
+- name: "Create Hostname mode"
+  template:
+    src: "hostname-mode.j2"
+    dest: "{{ fake_root }}/etc/NetworkManager/conf.d/hostname-mode.conf"
+
+
+- name: "Create modified ignition"
+  command: >
+    {{ working_path}}/filetranspiler --ignition "{{ ignition_base }}" --output "{{ ignition_out }}" --fake-root {{ fake_root }}
+

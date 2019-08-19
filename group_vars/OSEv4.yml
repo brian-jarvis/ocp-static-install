@@ -1,0 +1,3 @@
+ocp_version: 4.1.11
+ocp_pullsecret: "{{ lookup('file', 'pull-secret') }}"
+ocp_sshkey: "{{ lookup('file', ssh_key_path) }}"

@@ -1,0 +1,8 @@
+working_path: /tmp/create-ignition
+fake_root: "{{ working_path }}/fake-root-{{ node_name }}"
+ignition_base: "{{ working_path }}/ubi/master.ign"
+net_interface_name: eno2
+net_dns: 8.8.8.8
+net_ipaddr: 10.0.0.1
+net_prefix: 24
+net_gateway: "{{ net_dns }}"

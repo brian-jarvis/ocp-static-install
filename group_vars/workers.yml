@@ -1,0 +1,4 @@
+memory: "4096"
+cpu: "4"
+network_name: "ens2"
+ignition_file_type: "worker"

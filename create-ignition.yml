@@ -1,0 +1,102 @@
+---
+
+- name: Generate host specific ignition files 
+  hosts: ignition_host
+  gather_facts: false
+  tasks:
+  - name: "Create OCP4 Ignition Files"
+    block:
+      - name: Create temp directory for doing work in
+        command: mktemp -d /tmp/create-ignition-XXXXXX
+        register: mktemp
+        changed_when: False
+        check_mode: no
+
+      - set_fact:
+          tmp_path: "{{ mktemp.stdout }}"
+
+
+      - name: "Get OCP installer"
+        get_url:
+          url: "{{ item.url }}"
+          dest: "{{ tmp_path }}/{{ item.name }}"
+          mode: "u=rx,g=rx,o=rx"
+        loop:
+          - name: filetranspiler
+            url: https://raw.githubusercontent.com/brian-jarvis/filetranspiler/master/filetranspile
+          - name: openshift-install.tar.gz
+            url: https://mirror.openshift.com/pub/openshift-v4/clients/ocp/{{ hostvars[groups.OSEv4[0]].ocp_version }}/openshift-install-linux-{{ hostvars[groups.OSEv4[0]].ocp_version }}.tar.gz
+
+      - name: unzip the install
+        unarchive:
+          remote_src: yes
+          src: "{{ tmp_path }}/openshift-install.tar.gz"
+          dest: "{{ tmp_path }}"
+          mode: "u=rx,g=rx,o=rx"
+          creates: "{{ tmp_path }}/openshift-install"
+
+      - name: "create install-config"
+        template:
+          src: "install-config.yml.j2"
+          dest: "{{ tmp_path }}/install-config.yaml"
+
+      - set_fact:
+          ocp_installer_base: "{{ tmp_path }}/upi"
+
+      - name: "Create install dir"
+        file:
+          path: "{{ ocp_installer_base }}"
+          state: directory
+
+      - name: Copy install-config to install base
+        copy:
+            dest: "{{ ocp_installer_base }}/install-config.yaml"
+            src: "{{ tmp_path }}/install-config.yaml"
+            remote_src: yes
+
+      - name: "Create base ignition files"
+        command: >
+          {{ tmp_path }}/openshift-install --dir={{ ocp_installer_base }} create ignition-configs
+
+      - name: "Generate Ignition files"
+        include_role:
+          name: "generate-ignition"
+        vars:
+          working_path: "{{ tmp_path }}"
+          node_name: "{{ item }}"
+          net_interface_name: "{{ hostvars[item].network_name }}"
+          net_dns: "{{ hostvars[item].net_dns_ip }}"
+          net_ipaddr: "{{ hostvars[item].static_address }}"
+          net_gateway: "{{ hostvars[item].net_gateway_ip }}"
+          ignition_base: "{{ ocp_installer_base }}/{{ hostvars[item].ignition_file_type }}.ign"
+          ignition_out: "{{ tmp_path }}/{{ item }}-{{ hostvars[item].ignition_file_type }}.ign"
+        loop: "{{ groups.OSEv4 }}"
+
+      - name: Copy ignition to web host base
+        copy:
+            dest: "/var/www/html/"
+            src: "{{ tmp_path }}/{{ item }}-{{ hostvars[item].ignition_file_type }}.ign"
+            remote_src: yes
+        loop: "{{ groups.OSEv4 }}"
+
+      - name: "Create Virtual Machine s"
+        vars:
+          msg: |
+              coreos.inst.install_dev=vda coreos.inst.image_url=http://192.168.130.10/rhcos-4.1.0-x86_64-metal-uefi.raw.gz coreos.inst.ignition_url=http://192.168.130.10/{{ item }}-{{ hostvars[item].ignition_file_type }}.ign ip={{ hostvars[item].static_address }}::{{ hostvars[item].net_gateway_ip }}:255.255.255.0:{{ item }}:{{ hostvars[item].network_name }}:none:{{ hostvars[item].net_dns_ip }} console=tty0 console=ttyS0
+              virt-install \
+              --virt-type=kvm --name {{ item }}-static \
+              --memory={{ hostvars[item].memory }} --vcpus={{ hostvars[item].cpu }} \
+              --cdrom /vm_root/base_images/rhcos-4.1.0-x86_64-installer.iso \
+              --network network=ocp-cluster,model=virtio \
+              --graphics none \
+              --noautoconsole \
+              --disk path=/vmroot/machines/{{ hostvars[item].cluster_name }}-static/{{ item }}.qcow2,size=15,bus=virtio,format=qcow2 \
+              --boot uefi
+        debug:
+          msg: "{{ msg.split('\n') }}"
+        loop: "{{ groups.OSEv4 }}"
+    # always:
+    #   - name: "Clean up after"
+    #     file:
+    #         path: "{{ tmp_path }}"
+    #         state: absent
